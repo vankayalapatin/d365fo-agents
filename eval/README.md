@@ -85,6 +85,19 @@ from the wrong source, writes before sign-off, writes outside the design, termin
 AOT files) with nothing else installed. All checks must pass in Windows PowerShell 5.1 and
 PowerShell 7.
 
+## Token usage
+
+`tools/tokens.py` adds up the tokens a case used, per agent, from the Claude Code session
+transcripts on your machine (`~/.claude/projects`). It finds every session that mentions the
+ticket id, adds the subagents those sessions started, and prints a Markdown table: calls,
+output, fresh input, cache reads and total. Run it from the repo folder with Python 3:
+
+```
+python eval/tools/tokens.py --ticket <ticket-id>
+```
+
+`--split <UTC time>` shows design and build separately. `--help` lists the other options.
+
 ## Results
 
 Tested on UDE in the Claude desktop app: the smoke set passes (design, sign-off, build, tests
