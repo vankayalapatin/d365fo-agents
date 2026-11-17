@@ -1,0 +1,9 @@
+.claude/settings.local.json
+
+# Local working files, not part of the published agents
+CLAUDE.md
+article/
+journal/
+eval/runs/
+eval/test-plan.md
+eval/tools/

@@ -1,0 +1,10 @@
+{
+  "name": "d365fo-agents",
+  "version": "0.2.0",
+  "description": "AI agents for Dynamics 365 Finance & Operations (D365 F&O): ticket → fit-gap → FDD → TDD → X++ → review → QA/UAT. Finance and supply chain analysts, an architect, security and reporting specialists, a developer, a reviewer and QA, on top of d365fo-mcp-server. Security & licensing built in.",
+  "author": { "name": "Nikhil Vankayalapati" },
+  "homepage": "https://github.com/vankayalapatin/d365fo-agents",
+  "repository": "https://github.com/vankayalapatin/d365fo-agents",
+  "license": "MIT",
+  "keywords": ["d365fo", "d365", "dynamics 365", "finance and operations", "supply chain management", "x++", "ai agents", "multi-agent", "mcp server", "rag", "fdd", "tdd", "security roles", "mcp"]
+}

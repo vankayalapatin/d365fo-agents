@@ -1,0 +1,113 @@
+---
+name: d365fo-engineering-standards
+description: The ten D365 F&O engineering standards (S1–S10) every design, change and review must meet — config over hardcoding, reversibility, extensions only, labels, EDTs and naming, SysOperation, set-based and transaction-safe data access, security per entry point, BP clean and tested, grounded in real metadata. Use when designing, writing or reviewing X++.
+---
+
+# D365 F&O engineering standards (S1–S10)
+
+These rules add to the MCP server's own rules (`xpp_system_instructions` prompt and the
+workspace `copilot-instructions.md`); they do not repeat them. For the X++ detail behind a
+rule, ask the server: `get_knowledge(kind="knowledge", topic="<topic>")`.
+
+Each rule says what it requires, what a violation looks like, and how to check it. Designs
+cite rules by ID (for example "meets S2 via a feature class"); reviews report violations by ID.
+
+| ID | Rule | Violation looks like | Check with | Knowledge topic |
+|---|---|---|---|---|
+| **S1** | **Config over hardcoding.** Any value that could change — thresholds, accounts, codes, URLs, on/off behaviour, retry counts — lives in a parameter table field, a setup table or a number sequence. | A literal amount, account, item group, URL or `if (x == "ABC")` in code. | Read the code; `validate_code(mode="syntax")` | `number-sequences` |
+| **S2** | **Reversible by design.** New behaviour that blocks, changes data or changes a process can be switched off without a deployment. Display-only changes and messages added to a standard check need no switch (see *Choosing the S2 switch*). | New blocking or data-changing behaviour runs unconditionally; or a switch added to a display-only change, unless the TDD gives a reason. | TDD names the switch; code checks it at the entry point. | `feature-management`, `configuration-keys` |
+| **S3** | **Extensions only.** No overlayering. Prefer Chain of Command; use event handlers or delegates where CoC is not possible. Respect `[Hookable(false)]` / `[Wrappable(false)]`; call `next` unconditionally (only `[Replaceable]` methods may skip it). | Overlayered object; conditional `next`; wrapper on a non-wrappable method. | `prepare(mode="change")`, `extension_info(mode="points")` | `coc`, `coc-authoring`, `event-handlers` |
+| **S4** | **Labels, not text.** Every user-facing string (captions, help, info/warning/error, dialog prompts, report captions) is a label in the model's label file. Search before creating. | A string literal shown to a user. | `labels(action="search")`, `validate_code(mode="references")` | `labels` |
+| **S5** | **EDTs and naming.** Create a new EDT only when the type is used in more than one place (another table or entity field, method parameters, or a later ticket the design names). A single-use enum field is typed by its enum directly and carries its own label and help text, with a label ID different from the enum's (`BPErrorFieldLabelIsCopyOfEnumLabel`). Any other field needs a type (`BPErrorTableFieldNotDefinedUsingType`): an existing EDT that fits, else a new one. Objects carry the model prefix; names follow Microsoft rules. | A field typed as a bare base type; a name without the prefix. | `validate_object_naming`, `prepare(mode="create", fieldsHint)` | `bp-rules` |
+| **S6** | **Batch work uses SysOperation** (contract / controller / service), not RunBase. | A new `RunBase` / `RunBaseBatch` class. | Read the class hierarchy. | `sysoperation`, `async-retryable-batch` |
+| **S7** | **Set-based, transaction-safe data access.** `insert_recordset` / `update_recordset` / `delete_from` where the logic allows; balanced `ttsbegin` / `ttscommit` in the same method; no `skipDataMethods` / `skipEvents` / `doInsert` / `doUpdate` without a written reason in the TDD. | Row-by-row loop that could be set-based; tts opened in one method and closed in another. | `validate_code(mode="syntax")` | `set-based`, `transactions` |
+| **S8** | **Security for every entry point.** Every new menu item, service operation or data entity is covered by a privilege, the privilege by a duty, the duty by a role. No direct privilege-to-role links. | A menu item no privilege covers. | `security_info(mode="coverage")` | `security`, `security-privileges-duties` |
+| **S9** | **BP clean; tested as agreed.** Zero new BP warnings. Every acceptance criterion has a test: a manual UAT step always, and a SysTest only when the user chose automated tests for the ticket (asked at the TDD, default **No**). With automated tests, every criterion with **logic we write** behind it has a SysTest; metadata gets none. A red run first is a second choice of the user's, default **No** (see *What S9 tests* below). The user's "no" to either is a decision, not a gap. | New BP warning; an AC with no UAT step; with automated tests: logic with no SysTest, test data with fixed keys or colliding unique indexes; with *red first*: a logic test with no red run. | `run_bp_check`, `run_systest_class` | `testing`, `tdd-workflow` |
+| **S10** | **Grounded in real metadata.** Never name a table, field, method, label, EDT or enum that has not been looked up through the MCP server in this session. | An object name that `validate_code(mode="references")` cannot prove. | `validate_code(mode="references")` | — |
+
+## Choosing the S2 switch
+
+| Use | When | Notes |
+|---|---|---|
+| **Feature management** (a class implementing `IFeatureMetadata`) | Behaviour change the whole environment turns on or off, and that may later become always-on. | Turned on in the Feature management workspace. Check `get_knowledge(topic="feature-management")` for the exact pattern. |
+| **Parameter toggle** (a NoYes field on the module's parameter table, via table extension) | Behaviour that differs per legal entity, or that the business owner switches. | The default must be "off" (old behaviour). |
+| **Configuration key** | Structural on/off: hides tables, fields and menu items, usually tied to licensing. | Not a runtime business switch. |
+
+If more than one fits, prefer the one the business owner can operate without IT.
+
+**Scale the switch to the risk.** A switch is required when new behaviour can block a user,
+change data or change a process: validation that stops a save, defaulting, posting,
+integrations and services, batch jobs. It is **not** required, and adding one is overbuilding,
+when the change:
+- only **shows** something: a display method, a read-only column, a field on a form; or
+- only **adds a message** to a check standard already makes, so "off" would equal today.
+
+For those, record the off-switch in one `D-n` line instead: personalization or a saved view
+hides it, and removing the extension undoes it.
+
+## What S9 tests
+
+- **Two questions, both opt-in.** Most changes are tested by hand in the client. When writing
+  the TDD the architect asks the user, and records the answer in the TDD header
+  (`automated-tests: no | yes | yes, red first`). No answer means no.
+  1. *"Include automated tests (SysTest classes)? Default: no — manual test steps only."*
+     With **no**, §12 lists manual UAT steps only, the developer writes no test class, and the
+     rules below don't apply.
+  2. Only after a yes: *"Run the tests once before the logic exists, to prove they can fail?
+     It adds one Visual Studio rebuild, deploy and test run. Default: no."* With **no**, the
+     tests are written together with the logic and run once, green.
+  A ticket that itself asks for a unit test counts as **yes** to question 1 for that test. The
+  **field lane** doesn't ask: its change is metadata only, so it records `automated-tests: no`.
+- **The user's choice is not a gap.** A reviewer or QA never flags missing SysTests when the
+  TDD says `no`, or a missing red run when it doesn't say `red first`.
+
+The rules below apply when the TDD says `automated-tests: yes` (or `yes, red first`).
+
+- **Logic → SysTest.** Validation, calculations, defaulting in code, CoC wrappers, event
+  handlers, services, report data providers. Each test has a real assertion. With `yes`, write
+  it with the logic and run it green after the build.
+- **Red first (only with `yes, red first`).** Write the test with its real assertion before
+  the logic exists, build (it must compile), run it: it fails on that assertion. Then write
+  the logic and run it green. On UDE each red run costs the user a deploy and a Test Explorer
+  run, so it is the user's call. Without red first, the user can still prove a test by
+  breaking one expected value once.
+- **Test data.** The database is shared and already holds data, including leftovers from
+  earlier runs. Every SysTest class that inserts records:
+  - declares `[SysTestTransaction(TestTransactionMode::AutoRollback)]` on the class. Never
+    rely on, or claim in a comment, a rollback you have not declared;
+  - makes every key unique per run, for example from `newGuid()` cut to the field's length.
+    Never use fixed keys such as `TEST-1` or `V0001`: they collide with existing rows and the
+    test fails in setup, not on its assertion;
+  - covers **every unique index**, not only the primary key. Read the table's indexes
+    (`get_object_info`) before writing setup. `doInsert` skips the standard code that fills
+    fields such as `VendTable.Party` or `PurchTable.SourceDocumentHeader`, so they stay 0 and
+    the second row collides on their unique index. Give each such field a value unique per
+    run, or create the data through the standard path (ATL, the table's create method);
+  - sets **every field the code under test checks**. Never rely on an enum's default: an
+    unset `SalesTable.SalesType` is *Journal*, so a service that accepts only sales orders
+    refuses every test order, and the tests fail for the wrong reason.
+- **Metadata → no SysTest.** Fields, enum values, a default that is the enum's first value,
+  labels, help text, form placement, security objects. There is no code to make the test fail
+  first, so the build, the BP check and a UAT step prove it. The server's own guidance says
+  the same (`get_knowledge(topic="testing")`: metadata is not a SysTest question).
+- **Asked for anyway → guard test.** If the ticket asks for a test of metadata, write it and
+  mark it *guard* in the TDD and build log. It runs green once after the build; red first does
+  not apply.
+- **What the server does:** `generate_object(mode="pattern", pattern="systest")` scaffolds
+  each method ending in `this.fail(...)`, so an untouched scaffold runs red on purpose.
+  `run_systest_class` reports *Red phase confirmed* while those lines remain, and warns when a
+  new test class passes on its first run. The scaffold's red proves nothing about your
+  assertion — replace every `this.fail(...)` with the real assertion before the red run that
+  counts.
+
+## Choosing where S1 configuration lives
+
+- One value per legal entity → field on the module's existing parameter table (table extension).
+- A list of values, or values per item/customer/vendor group → a new setup table with its own form and privilege.
+- Generated identifiers → a number sequence.
+- Environment-specific technical values (endpoints, keys) → never in code or data that is copied between environments without review; name the store in the TDD and flag it for the user.
+
+## Sources
+
+- [Customize through extension and overlayering](https://learn.microsoft.com/dynamics365/fin-ops-core/dev-itpro/extensibility/customization-overlayering-extensions)
+- [Role-based security](https://learn.microsoft.com/dynamics365/fin-ops-core/dev-itpro/sysadmin/role-based-security)

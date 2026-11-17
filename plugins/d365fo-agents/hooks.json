@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "hooks": {
+    "userPromptSubmitted": [
+      {
+        "type": "command",
+        "powershell": "& ./hooks/d365fo-stamp.ps1",
+        "timeoutSec": 20
+      }
+    ],
+    "preToolUse": [
+      {
+        "type": "command",
+        "powershell": "& ./hooks/d365fo-gate.ps1",
+        "timeoutSec": 20
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "powershell": "& ./hooks/d365fo-record.ps1",
+        "timeoutSec": 20
+      }
+    ]
+  }
+}

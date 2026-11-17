@@ -1,0 +1,31 @@
+---
+name: d365fo-finance-checklist
+description: Finance impact checklist for D365 F&O changes — general ledger, posting, dimensions, AP, AR, tax, cash and bank, fixed assets, budgeting, intercompany, currency, period close, audit. Use in the finance functional agent.
+---
+
+# Finance impact checklist
+
+For each area: **affected / not affected / unknown**, one line of why. Look up the standard
+behaviour on Microsoft Learn before claiming a gap.
+
+| Area | What to check |
+|---|---|
+| **General ledger and posting** | Which vouchers are created or changed; main accounts used; posting profiles / posting definitions; ledger journal types; whether the change posts anything new or changes an existing posting. |
+| **Financial dimensions** | Default dimensions on masters and documents; dimension defaulting rules; account structures and advanced rules still validate; dimension set used in reporting. |
+| **Accounts payable** | Vendor master, vendor invoices, invoice matching (two/three-way), invoice approval workflow, payments, settlement, prepayments, vendor holds. |
+| **Accounts receivable** | Customer master, free text and sales invoices, credit limits and credit management, collections, payments, settlement, interest and fees. |
+| **Tax** | Sales tax groups and item sales tax groups, tax calculation on the document, withholding tax, tax reporting; country-specific (localization) behaviour. |
+| **Cash and bank** | Bank accounts, bank reconciliation, payment formats (often Electronic Reporting), cash flow forecasting. |
+| **Fixed assets** | Acquisition, depreciation, disposal postings; asset links from purchasing. |
+| **Budgeting** | Budget control checks on the document; budget register entries. |
+| **Intercompany** | Intercompany journals, intercompany trade chains, due-to/due-from accounts. |
+| **Currency** | Transaction vs accounting vs reporting currency; exchange rate type and date used; revaluation. |
+| **Period close** | Fiscal calendar and period status (open / on hold / closed); accruals; close checklist; whether the change must respect closed periods. |
+| **Audit and compliance** | Audit trail and voucher traceability; segregation of duties (SOX); approvals; who can change the new configuration; data retention. |
+| **Finance reporting** | Financial reporting, regulatory/ER reports, trial balance, and any report that would show the new data. |
+| **Number sequences** | Voucher and document numbering. |
+| **Workflow** | Journal, invoice or payment approval workflows touched. |
+
+Finance usually **requires**: correct and traceable postings, valid dimensions, respect for
+closed periods, auditability, segregation of duties. State these explicitly as your position
+when they apply.

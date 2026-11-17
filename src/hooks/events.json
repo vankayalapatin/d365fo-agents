@@ -1,0 +1,8 @@
+{
+  "description": "Neutral list of the d365fo hooks. scripts/build.ps1 turns it into the Claude form (plugin hooks/hooks.json and a user-settings fragment) and the Copilot form (plugin hooks.json, untested). Tool kinds are mapped per client in build.ps1.",
+  "hooks": [
+    { "event": "prompt",    "script": "d365fo-stamp.ps1",  "timeout": 20 },
+    { "event": "pre-tool",  "script": "d365fo-gate.ps1",   "timeout": 20, "tools": ["d365fo-write", "terminal", "file-write"] },
+    { "event": "post-tool", "script": "d365fo-record.ps1", "timeout": 20, "tools": ["file-write"] }
+  ]
+}

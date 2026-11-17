@@ -1,0 +1,98 @@
+---
+name: d365fo-functional-assessment
+description: How a d365fo functional agent turns a vague business ticket into a grounded fit-gap and impact assessment — standard-first ladder, cross-module areas, how to ask questions, and what counts as evidence. Use in the finance and supply chain functional agents.
+---
+
+# Functional assessment method
+
+A business user rarely writes a precise ticket. The job is to find the real need, check
+whether standard D365 already meets it, and say what the change would touch — before anyone
+designs code.
+
+## 1. Read the ticket twice
+
+1. Read `ticket.md` (the raw ticket **and its Clarifications** — the user's own answers and
+   notes about how the company works) **before** reading the architect's framing. A
+   clarification outranks your assumptions and the framing.
+2. Write the need in one or two plain sentences: who, what problem, why, how often, how much.
+3. Compare with the architect's framing. Record any difference as a **reading discrepancy**
+   — e.g. "Ticket says 'on posting'; framing says 'on confirmation'". Do not silently pick one.
+
+## 2. Standard first: the fit-gap ladder
+
+Go down the ladder and stop at the first rung that meets the need. A lower rung needs a
+reason why every higher rung fails.
+
+1. **Standard process or setup** — parameters, policies, setup forms, workflow, posting
+   profiles, number sequences, Feature management features already shipped.
+2. **Configurable tools** — Electronic Reporting / Business document management, alerts,
+   business events, workspaces and personalization, Power Automate / Power Apps, Data
+   management framework.
+3. **Out of scope for X++** — the real need is analytics (Power BI, Fabric, Synapse Link),
+   an integration platform concern, or a process/training issue. Say so and recommend the
+   right owner.
+4. **Customization** — only now. Describe the gap in business terms; the architect designs
+   the solution.
+
+For rungs 1–2, cite the Microsoft Learn page you opened (`mslearn/search` then
+`mslearn/fetch`). Where it helps, confirm the standard object exists with the MCP server
+(`search`, `get_object_info`) — e.g. that the parameter or setup form is really there.
+
+## 3. Impact checklist
+
+Use your module checklist (`d365fo-finance-checklist` or `d365fo-scm-checklist`). For every
+area answer **affected / not affected / unknown**, with one line of why. "Unknown" becomes a
+question. Then check the cross-module areas below — these are where finance and supply chain
+assessments most often disagree, so both agents check them.
+
+### Cross-module areas (both agents)
+
+| Area | Ask |
+|---|---|
+| Inventory → GL | Does the change alter inventory value, cost price, costing method behaviour, or what posts to which account (posting profiles / item groups)? |
+| Procure to pay | PO → receipt → invoice matching → AP → payment: which step changes, and does matching or accrual change? |
+| Order to cash | SO → pick/pack → invoice → AR → settlement: which step changes, and does revenue or credit control change? |
+| Financial dimensions | Are dimensions defaulted, changed or required on the source document, and does the account structure still validate? |
+| Tax | Does the change alter sales tax / withholding on the document? |
+| Intercompany | Does the document flow through an intercompany chain? |
+| Legal entities | Is the behaviour the same in every company? Per-company → parameter, not global switch. |
+| Period close | Does it affect inventory close/recalculation, accruals, or close timing? |
+| Number sequences | New document or voucher numbering? |
+| Business documents | Does a printed/emailed document change (invoice, PO, confirmation)? Flag for the reporting specialist. |
+| Volume and timing | How many records, how often, batch or interactive? |
+| Reversibility | How does the business turn it off, and what happens to data created while it was on? |
+
+## 4. Questions
+
+- Ask only questions that **change the outcome**. Maximum seven per assessment.
+- When the verdict is **standard** (rung 1 or 2), ask only what changes the setup design: a
+  value, who does a step, or whether a setup is needed at all. Put questions about current
+  practice or nice-to-haves under assumptions with their default, rather than asking a second
+  round.
+- Every question gets a suggested default and what changes if the answer differs:
+  `FIN-Q2: Should the rule apply to intercompany orders? Default: no — they are excluded.
+  If yes: the intercompany chain needs the same check (adds an AC).`
+- If a question is unanswered, the default becomes an assumption (`FIN-A2`) and the work
+  continues. Never block on a question that has a safe default.
+- Shape each question so it can be answered without contradiction and leaves room for the
+  company's own way of working (`d365fo-work-files` §8): one decision per question, mutually
+  exclusive options, an "Other — tell us" answer, and an invitation to add notes.
+- Make at least one question open: "How does your team handle this today?" — the answer
+  usually reveals the exceptions no checklist covers.
+
+## 5. Acceptance criteria
+
+Write proposed criteria in **Given / When / Then**, one behaviour each, testable by someone
+who did not write them. Include at least one negative case (what must *not* happen) and the
+"switched off" case.
+
+## 6. Your position
+
+End with what your module **requires** (non-negotiable — e.g. "must post to a separate main
+account, auditors need it") and what it **prefers** (negotiable). The architect uses this to
+reconcile finance and supply chain.
+
+## 7. Output
+
+Write `assessment-<finance|scm>.md` using the assessment template
+(`templates/assessment.md`). Keep it short: tables and bullets, no essays.
